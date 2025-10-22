@@ -74,19 +74,19 @@ if 'grading_results' not in st.session_state:
     st.session_state.grading_results = None
 if 'topic' not in st.session_state:
     st.session_state.topic = ""
+if 'api_key' not in st.session_state:
+    st.session_state.api_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
-def get_anthropic_client():
+def get_anthropic_client(api_key: str):
     """Get Anthropic client instance."""
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        st.error("⚠️ ANTHROPIC_API_KEY not found in environment variables!")
-        st.stop()
+        return None
     return anthropic.Anthropic(api_key=api_key)
 
 @st.cache_data(show_spinner=False)
-def generate_questions(topic: str) -> list:
+def generate_questions(topic: str, api_key: str) -> list:
     """Generate questions using Claude API with caching to save API calls."""
-    client = get_anthropic_client()
+    client = get_anthropic_client(api_key)
 
     prompt = f"""Generate 5 multiple-choice questions about {topic}.
 
@@ -129,9 +129,9 @@ Make the questions interesting and educational. Ensure only one answer is correc
     else:
         raise ValueError("Could not parse questions from Claude's response")
 
-def grade_quiz(questions: list, user_answers: dict) -> list:
+def grade_quiz(questions: list, user_answers: dict, api_key: str) -> list:
     """Grade the quiz using Claude API."""
-    client = get_anthropic_client()
+    client = get_anthropic_client(api_key)
 
     quiz_data = []
     for i, question in enumerate(questions):
@@ -189,7 +189,42 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# API Key input (sidebar or main area if not set)
+with st.sidebar:
+    st.markdown("### 🔑 API Configuration")
+    api_key_input = st.text_input(
+        "Anthropic API Key:",
+        value=st.session_state.api_key,
+        type="password",
+        help="Enter your Anthropic API key. Get one at https://console.anthropic.com/"
+    )
+
+    if api_key_input != st.session_state.api_key:
+        st.session_state.api_key = api_key_input
+
+    if st.session_state.api_key:
+        st.success("✅ API Key set!")
+    else:
+        st.warning("⚠️ Please enter your API key")
+
+    st.markdown("---")
+    st.markdown("""
+        **💡 Don't have an API key?**
+
+        1. Visit [Anthropic Console](https://console.anthropic.com/)
+        2. Sign up / Log in
+        3. Go to API Keys
+        4. Create a new key
+        5. Paste it above
+
+        **💰 Cost:** ~$0.01-0.02 per quiz
+    """)
+
 # Main app logic
+if not st.session_state.api_key:
+    st.info("👈 Please enter your Anthropic API key in the sidebar to get started!")
+    st.stop()
+
 if not st.session_state.questions:
     # Topic input phase
     st.markdown("### 📚 Choose Your Topic")
@@ -203,7 +238,7 @@ if not st.session_state.questions:
         if topic.strip():
             with st.spinner("🤔 Generating quiz questions... (This uses 1 API call)"):
                 try:
-                    questions = generate_questions(topic.strip())
+                    questions = generate_questions(topic.strip(), st.session_state.api_key)
                     st.session_state.questions = questions
                     st.session_state.topic = topic.strip()
                     st.session_state.user_answers = {}
@@ -212,6 +247,7 @@ if not st.session_state.questions:
                     st.rerun()
                 except Exception as e:
                     st.error(f"❌ Error generating questions: {e}")
+                    st.error("Please check your API key and try again.")
         else:
             st.warning("⚠️ Please enter a topic!")
 
@@ -246,7 +282,7 @@ elif not st.session_state.quiz_submitted:
             if len(st.session_state.user_answers) == len(st.session_state.questions):
                 with st.spinner("⏳ Grading your quiz... (This uses 1 API call)"):
                     try:
-                        results = grade_quiz(st.session_state.questions, st.session_state.user_answers)
+                        results = grade_quiz(st.session_state.questions, st.session_state.user_answers, st.session_state.api_key)
                         st.session_state.grading_results = results
                         st.session_state.quiz_submitted = True
                         st.rerun()
@@ -334,6 +370,7 @@ st.markdown("---")
 st.markdown("""
     <div style='text-align: center; color: #666; padding: 1rem;'>
         <p>💡 Tip: Questions are cached to minimize API calls. Same topic = no new API call!</p>
+        <p>🔒 Your API key is used only for your session and is never stored or shared.</p>
         <p>Powered by Claude AI | Total API calls per quiz: 2 (generate + grade)</p>
     </div>
 """, unsafe_allow_html=True)

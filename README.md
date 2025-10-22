@@ -35,12 +35,13 @@
    pip install -r requirements.txt
    ```
 
-3. **Set up your API key**
+3. **Get your Anthropic API key**
 
-   Create a `.env` file in the project root:
-   ```env
-   ANTHROPIC_API_KEY=your-api-key-here
-   ```
+   - Visit [Anthropic Console](https://console.anthropic.com/)
+   - Sign up or log in
+   - Create a new API key
+
+   **Note**: You'll enter the API key in the app's sidebar when you run it.
 
 ### Running the App
 
@@ -52,8 +53,19 @@ streamlit run app.py
 
 The app will open in your browser at `http://localhost:8501`
 
+**First-time setup:**
+1. Enter your Anthropic API key in the sidebar
+2. The key is only used during your session and never stored
+3. Start creating quizzes!
+
 #### 💻 CLI App
 
+For the CLI version, create a `.env` file first:
+```env
+ANTHROPIC_API_KEY=your-api-key-here
+```
+
+Then run:
 ```bash
 python quiz_app.py
 ```
@@ -62,10 +74,11 @@ python quiz_app.py
 
 ### Web App Features
 
-1. **Enter a Topic** - Type any subject (e.g., "Python Programming", "World History", "Physics")
-2. **Generate Questions** - AI creates 5 unique multiple-choice questions
-3. **Take the Quiz** - Select answers using intuitive radio buttons
-4. **View Results** - Get instant feedback with:
+1. **Enter API Key** - Input your Anthropic API key in the sidebar (one-time per session)
+2. **Enter a Topic** - Type any subject (e.g., "Python Programming", "World History", "Physics")
+3. **Generate Questions** - AI creates 5 unique multiple-choice questions
+4. **Take the Quiz** - Select answers using intuitive radio buttons
+5. **View Results** - Get instant feedback with:
    - ✅ Green highlighting for correct answers
    - ❌ Red highlighting for incorrect answers
    - 📝 Detailed explanations for each question
@@ -151,10 +164,11 @@ AI-Quiz-Generator/
 
 ## 🔒 Security Notes
 
-- ⚠️ **Never commit your `.env` file** - it contains your API key
-- 🔑 **Keep your API key private** - treat it like a password
+- 🔑 **Web App**: Enter your API key in the sidebar - it's only used during your session and never stored or shared
+- ⚠️ **CLI App**: Never commit your `.env` file - it contains your API key
 - 🛡️ **Use `.gitignore`** - the provided `.gitignore` protects sensitive files
 - 💳 **Monitor your usage** - check your Anthropic dashboard regularly
+- 🎯 **Deployment**: When deploying, users will need to provide their own API keys (you won't pay for their usage!)
 
 ## 🤝 Contributing
 
